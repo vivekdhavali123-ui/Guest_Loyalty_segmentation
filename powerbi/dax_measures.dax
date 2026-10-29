@@ -1,0 +1,178 @@
+// ==============================================================================
+// ACCOR LIVE LIMITLESS (ALL) - PRODUCTION POWER BI DAX MEASURE LIBRARY
+// Designed for Enterprise CRM & Executive Decision Support
+// ==============================================================================
+
+// ------------------------------------------------------------------------------
+// SECTION 1: CORE PORTFOLIO & LOYALTY MEASURES
+// ------------------------------------------------------------------------------
+
+[Total Members] = 
+DISTINCTCOUNT(dim_loyalty_members[member_id])
+
+[Active Members] = 
+CALCULATE(
+    [Total Members],
+    fact_member_segments_churn[is_churned] = 0
+)
+
+[Churned Members] = 
+CALCULATE(
+    [Total Members],
+    fact_member_segments_churn[is_churned] = 1
+)
+
+[Churn Rate %] = 
+DIVIDE([Churned Members], [Total Members], 0)
+
+[Total Revenue EUR] = 
+SUM(fact_member_segments_churn[monetary_spend_eur])
+
+[Average Revenue Per Member EUR] = 
+DIVIDE([Total Revenue EUR], [Total Members], 0)
+
+[Average Stays Per Member] = 
+AVERAGE(fact_member_segments_churn[frequency_stays])
+
+[Average Recency Days] = 
+AVERAGE(fact_member_segments_churn[recency_days])
+
+
+// ------------------------------------------------------------------------------
+// SECTION 2: CHURN RISK & REVENUE EXPOSURE MEASURES
+// ------------------------------------------------------------------------------
+
+[High Risk Members Count] = 
+CALCULATE(
+    [Total Members],
+    fact_member_segments_churn[churn_risk_tier] = "High Risk"
+)
+
+[High Risk Members %] = 
+DIVIDE([High Risk Members Count], [Total Members], 0)
+
+[Medium Risk Members Count] = 
+CALCULATE(
+    [Total Members],
+    fact_member_segments_churn[churn_risk_tier] = "Medium Risk"
+)
+
+[Low Risk Members Count] = 
+CALCULATE(
+    [Total Members],
+    fact_member_segments_churn[churn_risk_tier] = "Low Risk"
+)
+
+[Average Churn Risk Score] = 
+AVERAGE(fact_member_segments_churn[churn_risk_score])
+
+[Total Revenue At Risk EUR] = 
+CALCULATE(
+    [Total Revenue EUR],
+    fact_member_segments_churn[churn_risk_tier] IN {"High Risk", "Medium Risk"}
+)
+
+[Revenue At Risk % of Total] = 
+DIVIDE([Total Revenue At Risk EUR], [Total Revenue EUR], 0)
+
+[High-Value Revenue At Stake EUR] = 
+CALCULATE(
+    [Total Revenue EUR],
+    fact_member_segments_churn[churn_risk_tier] = "High Risk",
+    fact_member_segments_churn[kmeans_segment] IN {"High-Value Champions", "At-Risk High-Spenders"}
+)
+
+[Total 24M CLV At Risk EUR] = 
+CALCULATE(
+    SUM(fact_member_segments_churn[estimated_clv_eur]),
+    fact_member_segments_churn[churn_risk_tier] = "High Risk"
+)
+
+
+// ------------------------------------------------------------------------------
+// SECTION 3: SEGMENTATION BREAKDOWNS (RFM & K-MEANS)
+// ------------------------------------------------------------------------------
+
+[High Value Champions Count] = 
+CALCULATE(
+    [Total Members],
+    fact_member_segments_churn[kmeans_segment] = "High-Value Champions"
+)
+
+[At-Risk High Spenders Count] = 
+CALCULATE(
+    [Total Members],
+    fact_member_segments_churn[kmeans_segment] = "At-Risk High-Spenders"
+)
+
+[Loyal Mainstays Count] = 
+CALCULATE(
+    [Total Members],
+    fact_member_segments_churn[kmeans_segment] = "Loyal Mainstays"
+)
+
+[Dormant Members Count] = 
+CALCULATE(
+    [Total Members],
+    fact_member_segments_churn[kmeans_segment] = "Dormant / Churned"
+)
+
+[Value Seekers Count] = 
+CALCULATE(
+    [Total Members],
+    fact_member_segments_churn[kmeans_segment] = "Value Seekers"
+)
+
+
+// ------------------------------------------------------------------------------
+// SECTION 4: CRM RETENTION CAMPAIGN ECONOMICS & ROI
+// ------------------------------------------------------------------------------
+
+[CRM Actionable Outreach Audience] = 
+CALCULATE(
+    [Total Members],
+    fact_member_segments_churn[churn_risk_tier] IN {"High Risk", "Medium Risk"},
+    fact_member_segments_churn[kmeans_segment] IN {"High-Value Champions", "At-Risk High-Spenders", "Loyal Mainstays"}
+)
+
+[Estimated Campaign Contact Cost EUR] = 
+// Dynamic cost estimate: €14.50 per high-touch VIP intervention
+[CRM Actionable Outreach Audience] * 14.50
+
+[Expected Retention Revenue Recovery EUR] = 
+// Projected recovery: 18% of revenue at risk for targeted campaigns
+[Total Revenue At Risk EUR] * 0.18
+
+[Net Campaign Profit EUR] = 
+[Expected Retention Revenue Recovery EUR] - [Estimated Campaign Contact Cost EUR]
+
+[Retention Campaign ROI %] = 
+DIVIDE(
+    [Net Campaign Profit EUR],
+    [Estimated Campaign Contact Cost EUR],
+    0
+)
+
+
+// ------------------------------------------------------------------------------
+// SECTION 5: HOSPITALITY SERVICE QUALITY & FRICTION
+// ------------------------------------------------------------------------------
+
+[Average Guest Satisfaction Score] = 
+AVERAGE(fact_member_segments_churn[avg_satisfaction_score])
+
+[Total Complaints Count] = 
+SUM(fact_member_segments_churn[total_complaints])
+
+[Members With Unresolved Incidents] = 
+CALCULATE(
+    [Total Members],
+    fact_member_segments_churn[total_complaints] > 0
+)
+
+[Service Friction Churn Multiplier] = 
+DIVIDE(
+    CALCULATE([Churn Rate %], fact_member_segments_churn[total_complaints] > 0),
+    CALCULATE([Churn Rate %], fact_member_segments_churn[total_complaints] = 0),
+    1
+)

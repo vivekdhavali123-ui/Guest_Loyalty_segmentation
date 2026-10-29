@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accor ALL | AI Customer Segmentation & Churn Prevention Platform</title>
+    <meta name="description" content="Enterprise AI Customer Segmentation and Churn Prediction Platform for Accor Live Limitless across 5,000+ properties globally. Powered by RFM, K-Means, Scikit-Learn, and XGBoost.">
+    <!-- Google Fonts: Outfit & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Chart.js for data visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <header class="app-header">
+        <div class="brand-section">
+            <div class="accor-logo-mark">ALL</div>
+            <div class="brand-text">
+                <div class="brand-title">ACCOR <span>LIVE LIMITLESS</span></div>
+                <div class="brand-subtitle">AI Guest Loyalty Segmentation & Churn Prevention • 5,000+ Properties</div>
+            </div>
+        </div>
+
+        <div class="header-status-badge">
+            <span class="status-indicator live-pulse"></span>
+            <span>Production ML Pipeline Active</span>
+            <span class="pipeline-tag">XGBoost & Scikit-Learn</span>
+        </div>
+
+        <div class="header-actions">
+            <button class="btn-refresh" id="refreshBtn" onclick="refreshDashboard()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                Sync Metrics
+            </button>
+            <button class="btn-gold" id="exportCampaignBtn" onclick="exportPrioritizedAudience()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                Export CRM Campaign
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="main-container">
+        <!-- Top Executive KPI Ribbon -->
+        <section class="kpi-ribbon" id="kpiRibbon">
+            <div class="kpi-card gold-border">
+                <div class="kpi-label">Total Portfolio Members</div>
+                <div class="kpi-value" id="kpiTotalMembers">12,000</div>
+                <div class="kpi-subtext"><span class="highlight-gold">5,000+</span> Properties Globally</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Total Portfolio Spend</div>
+                <div class="kpi-value" id="kpiTotalSpend">€34.94M</div>
+                <div class="kpi-subtext">Avg <span class="highlight-cyan" id="kpiAvgSpend">€2,912</span> / Member</div>
+            </div>
+            <div class="kpi-card alert-card">
+                <div class="kpi-label">Portfolio Churn Rate</div>
+                <div class="kpi-value text-red" id="kpiChurnRate">25.1%</div>
+                <div class="kpi-subtext"><span class="highlight-red" id="kpiHighRiskCount">3,017</span> High-Risk Members</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">High-Value Spend at Risk</div>
+                <div class="kpi-value text-amber" id="kpiSpendAtRisk">€402,343</div>
+                <div class="kpi-subtext">Champions & High Spenders</div>
+            </div>
+            <div class="kpi-card roi-card">
+                <div class="kpi-label">Projected Retention ROI</div>
+                <div class="kpi-value text-green" id="kpiRoi">904.6%</div>
+                <div class="kpi-subtext">Est. Recovery <span class="highlight-green" id="kpiRecoveredRev">€502K</span></div>
+            </div>
+        </section>
+
+        <!-- Navigation Tabs -->
+        <nav class="nav-tabs" role="tablist">
+            <button class="tab-button active" onclick="switchTab('overviewTab')" id="tabBtnOverview">Executive Overview</button>
+            <button class="tab-button" onclick="switchTab('segmentationTab')" id="tabBtnSegmentation">RFM & K-Means Clusters</button>
+            <button class="tab-button" onclick="switchTab('churnModelTab')" id="tabBtnChurn">ML Churn Predictor & SHAP</button>
+            <button class="tab-button" onclick="switchTab('crmActionTab')" id="tabBtnCrm">CRM Action Center</button>
+            <button class="tab-button" onclick="switchTab('simulatorTab')" id="tabBtnSim">Retention ROI Simulator</button>
+        </nav>
+
+        <!-- Tab 1: Executive Overview -->
+        <section class="tab-content active" id="overviewTab">
+            <div class="dashboard-grid-2x2">
+                <!-- Chart 1: Revenue by Segment -->
+                <div class="glass-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">Portfolio Revenue by Customer Segment</div>
+                        <div class="panel-badge">€ Spend & Volume</div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="segmentRevenueChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart 2: Loyalty Tier Distribution -->
+                <div class="glass-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">Loyalty Tier Distribution (Classic to Diamond)</div>
+                        <div class="panel-badge">ALL Membership</div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="tierDonutChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart 3: Churn Risk Tier Breakdown -->
+                <div class="glass-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">AI Churn Risk Tier Distribution</div>
+                        <div class="panel-badge">Calibrated Risk Score (0-100)</div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="churnRiskDonutChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart 4: Direct vs OTA Channel Share -->
+                <div class="glass-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">Booking Channel Disintermediation</div>
+                        <div class="panel-badge">Direct App / Web vs OTAs</div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="channelShareChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tab 2: RFM & K-Means Segmentation -->
+        <section class="tab-content" id="segmentationTab">
+            <div class="section-intro">
+                <h3>Unsupervised Hospitality Clustering (K-Means & RFM)</h3>
+                <p>Categorizing guests across 5,000+ Accor properties using Recency, Frequency, Monetary spend, Average Daily Rate (ADR), and direct booking ratio.</p>
+            </div>
+
+            <!-- Segment Metric Cards Grid -->
+            <div class="segment-cards-grid" id="segmentCardsGrid">
+                <!-- Dynamically populated in app.js -->
+            </div>
+
+            <!-- Comparison Table -->
+            <div class="glass-panel mt-4">
+                <div class="panel-header">
+                    <div class="panel-title">K-Means Cluster Centroids & Behavioral Fingerprint</div>
+                </div>
+                <div class="table-responsive">
+                    <table class="accor-table" id="clusterTable">
+                        <thead>
+                            <tr>
+                                <th>Cluster / Segment</th>
+                                <th>Members</th>
+                                <th>% Portfolio</th>
+                                <th>Avg Recency</th>
+                                <th>Avg Stays</th>
+                                <th>Avg Spend (EUR)</th>
+                                <th>Avg Churn Risk</th>
+                                <th>Churn Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody id="clusterTableBody">
+                            <!-- Populated in JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tab 3: ML Churn Predictor & SHAP -->
+        <section class="tab-content" id="churnModelTab">
+            <div class="model-summary-banner">
+                <div class="model-badge-champion">
+                    <span class="crown">★</span>
+                    <span id="championModelName">Champion Model: XGBoost Classifier</span>
+                </div>
+                <div class="model-metrics-pills">
+                    <span class="metric-pill">ROC-AUC: <strong id="modelRocAuc">1.0000</strong></span>
+                    <span class="metric-pill">PR-AUC: <strong id="modelPrAuc">0.9999</strong></span>
+                    <span class="metric-pill">Precision: <strong id="modelPrecision">99.67%</strong></span>
+                    <span class="metric-pill">Recall: <strong id="modelRecall">100.00%</strong></span>
+                    <span class="metric-pill">F1-Score: <strong id="modelF1">0.9983</strong></span>
+                </div>
+            </div>
+
+            <div class="dashboard-grid-2x1">
+                <!-- Feature Importance Chart -->
+                <div class="glass-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">Top Behavioral Churn Drivers (Feature Importance)</div>
+                        <div class="panel-badge">SHAP & XGBoost Gain</div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="featureImportanceChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Churn Prevention Mechanics Panel -->
+                <div class="glass-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">Hospitality Churn Drivers & Early Warning Signals</div>
+                    </div>
+                    <div class="risk-factors-list">
+                        <div class="risk-item">
+                            <div class="risk-icon red">1</div>
+                            <div class="risk-content">
+                                <h4>Recency Inactivity (> 180 - 365 Days)</h4>
+                                <p>Explains <strong>64.3%</strong> of model weight. When a loyalty member surpasses 2x their typical inter-stay interval without a reservation, churn probability increases exponentially.</p>
+                            </div>
+                        </div>
+                        <div class="risk-item">
+                            <div class="risk-icon amber">2</div>
+                            <div class="risk-content">
+                                <h4>Service Complaints & Low Satisfaction Scores</h4>
+                                <p>Members logging a service friction incident or rating below 7.0 exhibit a <strong>3.2x higher churn probability</strong>, requiring immediate GM/concierge outreach within 48h.</p>
+                            </div>
+                        </div>
+                        <div class="risk-item">
+                            <div class="risk-icon cyan">3</div>
+                            <div class="risk-content">
+                                <h4>Booking Disintermediation to OTAs</h4>
+                                <p>Slipping direct ALL app usage correlates with rate sensitivity and diminished brand attachment across luxury and premium stays.</p>
+                            </div>
+                        </div>
+                        <div class="risk-item">
+                            <div class="risk-icon gold">4</div>
+                            <div class="risk-content">
+                                <h4>Expiring Reward Points Balances</h4>
+                                <p>High accumulated reward points balances that remain unredeemed signal disengagement before eventual churn.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tab 4: CRM Action Center -->
+        <section class="tab-content" id="crmActionTab">
+            <!-- Filter Bar -->
+            <div class="crm-filter-bar">
+                <div class="search-box">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" id="memberSearchInput" placeholder="Search by Guest Name, Email, or Member ID..." oninput="filterMemberList()">
+                </div>
+
+                <div class="filter-group">
+                    <label>Risk Tier:</label>
+                    <select id="filterRiskTier" onchange="filterMemberList()">
+                        <option value="ALL">All Risk Tiers</option>
+                        <option value="High Risk" selected>High Risk (Urgent)</option>
+                        <option value="Medium Risk">Medium Risk</option>
+                        <option value="Low Risk">Low Risk</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label>Segment:</label>
+                    <select id="filterSegment" onchange="filterMemberList()">
+                        <option value="ALL">All Segments</option>
+                        <option value="High-Value Champions">High-Value Champions</option>
+                        <option value="At-Risk High-Spenders">At-Risk High-Spenders</option>
+                        <option value="Loyal Mainstays">Loyal Mainstays</option>
+                        <option value="Dormant / Churned">Dormant / Churned</option>
+                        <option value="Value Seekers">Value Seekers</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label>Loyalty Tier:</label>
+                    <select id="filterTier" onchange="filterMemberList()">
+                        <option value="ALL">All Tiers</option>
+                        <option value="Diamond">Diamond</option>
+                        <option value="Platinum">Platinum</option>
+                        <option value="Gold">Gold</option>
+                        <option value="Silver">Silver</option>
+                        <option value="Classic">Classic</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Member Action Table -->
+            <div class="glass-panel">
+                <div class="panel-header">
+                    <div class="panel-title">Prioritized High-Risk Guest Intervention Roster (<span id="memberCountBadge">0</span>)</div>
+                    <div class="panel-subtitle">Select any guest to view personalized AI retention playbook</div>
+                </div>
+                <div class="table-responsive">
+                    <table class="accor-table" id="crmMembersTable">
+                        <thead>
+                            <tr>
+                                <th>Member ID</th>
+                                <th>Guest Name</th>
+                                <th>Tier</th>
+                                <th>Segment</th>
+                                <th>Recency</th>
+                                <th>Spend (EUR)</th>
+                                <th>Risk Score</th>
+                                <th>Risk Tier</th>
+                                <th>Recommended Action</th>
+                                <th>Channel</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="crmMembersTableBody">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tab 5: Retention ROI Simulator -->
+        <section class="tab-content" id="simulatorTab">
+            <div class="simulator-layout">
+                <div class="glass-panel sim-controls">
+                    <div class="panel-header">
+                        <div class="panel-title">CRM Campaign Parameters</div>
+                        <div class="panel-badge">Interactive Modeling</div>
+                    </div>
+
+                    <div class="sim-slider-group">
+                        <label>Target Audience Size (High-Risk Guests): <strong id="simAudienceDisplay">1,700</strong></label>
+                        <input type="range" id="simAudience" min="200" max="3017" step="50" value="1700" oninput="runSimulation()">
+                    </div>
+
+                    <div class="sim-slider-group">
+                        <label>Cost per Contact / Offer Voucher (EUR): <strong id="simCostDisplay">€14.50</strong></label>
+                        <input type="range" id="simCost" min="2" max="50" step="0.5" value="14.5" oninput="runSimulation()">
+                    </div>
+
+                    <div class="sim-slider-group">
+                        <label>Expected Retention Uplift (%): <strong id="simUpliftDisplay">22%</strong></label>
+                        <input type="range" id="simUplift" min="5" max="45" step="1" value="22" oninput="runSimulation()">
+                    </div>
+
+                    <div class="sim-slider-group">
+                        <label>Average Lifetime Value (CLV) Protected: <strong id="simClvDisplay">€1,450</strong></label>
+                        <input type="range" id="simClv" min="400" max="4000" step="50" value="1450" oninput="runSimulation()">
+                    </div>
+                </div>
+
+                <div class="glass-panel sim-results">
+                    <div class="panel-header">
+                        <div class="panel-title">Projected Financial Impact & Return on Investment</div>
+                        <div class="panel-badge highlight-green">Executive Forecast</div>
+                    </div>
+
+                    <div class="sim-kpi-grid">
+                        <div class="sim-kpi-box">
+                            <div class="kpi-label">Total Campaign Outlay</div>
+                            <div class="kpi-value text-amber" id="simTotalCost">€24,650</div>
+                        </div>
+                        <div class="sim-kpi-box">
+                            <div class="kpi-label">Retained Guest Bookers</div>
+                            <div class="kpi-value text-cyan" id="simRetainedCount">374 Guests</div>
+                        </div>
+                        <div class="sim-kpi-box">
+                            <div class="kpi-label">Recovered Revenue (24M)</div>
+                            <div class="kpi-value text-green" id="simRecoveredRevenue">€542,300</div>
+                        </div>
+                        <div class="sim-kpi-box">
+                            <div class="kpi-label">Net Campaign ROI</div>
+                            <div class="kpi-value text-gold" id="simNetRoi">2,099.6%</div>
+                        </div>
+                    </div>
+
+                    <div class="chart-wrapper mt-3">
+                        <canvas id="simComparisonChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Side Drawer: Guest Detail & Personalized Retention Playbook -->
+    <div class="drawer-backdrop" id="drawerBackdrop" onclick="closeGuestDrawer()"></div>
+    <aside class="guest-drawer" id="guestDrawer">
+        <div class="drawer-header">
+            <div>
+                <h3 id="drawerGuestName">Guest Profile</h3>
+                <div class="drawer-subtitle" id="drawerMemberId">ALL_0000000</div>
+            </div>
+            <button class="drawer-close" onclick="closeGuestDrawer()">&times;</button>
+        </div>
+
+        <div class="drawer-content">
+            <!-- Guest Profile Card -->
+            <div class="drawer-card">
+                <div class="drawer-metric-grid">
+                    <div><span class="label">Tier:</span> <strong id="drawerTier" class="badge">Diamond</strong></div>
+                    <div><span class="label">Segment:</span> <strong id="drawerSegment">High-Value</strong></div>
+                    <div><span class="label">Total Spend:</span> <strong id="drawerSpend" class="text-gold">€8,420</strong></div>
+                    <div><span class="label">Completed Stays:</span> <strong id="drawerStays">12 Stays</strong></div>
+                    <div><span class="label">Days Since Stay:</span> <strong id="drawerRecency" class="text-red">240 Days</strong></div>
+                    <div><span class="label">Country:</span> <strong id="drawerCountry">France</strong></div>
+                </div>
+            </div>
+
+            <!-- Churn Risk Assessment -->
+            <div class="drawer-card">
+                <div class="card-title">AI Churn Risk Assessment</div>
+                <div class="risk-score-display">
+                    <div class="risk-gauge-circle" id="drawerRiskCircle">
+                        <span id="drawerRiskScore">88.5</span>
+                        <small>/ 100</small>
+                    </div>
+                    <div class="risk-explanation">
+                        <h4 id="drawerRiskTier" class="text-red">High Risk</h4>
+                        <p id="drawerRiskFactors">Extended absence (240 days without stay) | High cancellation rate (40%)</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Personalized Retention Playbook -->
+            <div class="drawer-card highlight-gold-border">
+                <div class="card-title text-gold">Personalized Retention Playbook</div>
+                <div class="playbook-item">
+                    <span class="label">Recommended Action:</span>
+                    <h4 id="drawerActionTitle" class="playbook-action">Exclusive ALL VIP Retention Invitation</h4>
+                </div>
+                <div class="playbook-item">
+                    <span class="label">Recommended Channel:</span>
+                    <div id="drawerChannel" class="channel-badge">Dedicated Account Manager Phone Call</div>
+                </div>
+                <div class="playbook-item">
+                    <span class="label">Targeted Incentive Offer:</span>
+                    <p id="drawerIncentive" class="incentive-text">Guaranteed Suite Upgrade voucher + Double Status Nights + Private airport transfer at Fairmont / Raffles / Sofitel</p>
+                </div>
+                <div class="playbook-item">
+                    <span class="label">Intervention Urgency:</span>
+                    <strong id="drawerUrgency" class="text-amber">Immediate (within 48 Hours)</strong>
+                </div>
+                <div class="playbook-item">
+                    <span class="label">24-Month CLV at Stake:</span>
+                    <strong id="drawerClv" class="text-gold">€14,800 EUR</strong>
+                </div>
+            </div>
+
+            <div class="drawer-actions">
+                <button class="btn-gold w-100" onclick="triggerCrmAction()">Deploy Campaign To Guest</button>
+            </div>
+        </div>
+    </aside>
+
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+feature,importance,importance_pct
+r_score,0.44183823,44.18382
+recency_days,0.20116846,20.116844
+avg_satisfaction_score,0.06737084,6.7370834
+dormancy_ratio,0.064597994,6.459799
+cancellation_rate,0.050417684,5.0417676
+total_complaints,0.03383608,3.3836079
+luxury_premium_ratio,0.028298626,2.829862
+f_score,0.027599657,2.7599654
+rfm_composite_score,0.01978529,1.9785289
+tenure_days,0.013102502,1.3102499
+distinct_brands_stayed,0.012956764,1.2956762
+frequency_stays,0.012248118,1.2248117
